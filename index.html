@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do List</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="todo-list">
+                <h1 class="task-heading">My Tasks</h1>
+                <p id="task-status">0 of 0 completed</p>
+
+                <input id="task-input" type="text" placeholder="Add a new task...">
+                <button class="add-task-btn" onclick="addTask()">Add Task</button>
+
+                <div class="task-list-wrapper">
+                    <ul id="task-list">
+                        <li id="empty-state">
+                            <img class="sticky-note" src="./sticky-notes.png" alt="sticky-notes" height="60" width="60">
+                            <p class="empty-text">No text yet</p>
+                            <p class="empty-subtext">Add your first task to get started!</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <script>
+const taskInput = document.getElementById("task-input");
+const taskList = document.getElementById("task-list");
+const taskStatus = document.getElementById("task-status");
+
+function saveTasks() {
+  const tasks = [];
+  taskList.querySelectorAll("li").forEach(li => {
+    if (li.id === "empty-state") return;
+    const checkbox = li.querySelector("input[type='checkbox']");
+    const text = li.textContent.replace("Delete", "").trim();
+    tasks.push({ text, completed: checkbox.checked });
+  });
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function loadTasks() {
+  const stored = JSON.parse(localStorage.getItem("tasks")) || [];
+  if (stored.length === 0) {
+    document.getElementById("empty-state").style.display = "block";
+    return;
+  }
+  document.getElementById("empty-state").style.display = "none";
+  stored.forEach(t => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <input type='checkbox' class='task-checkbox' onchange='updateStatus()' ${t.completed ? "checked" : ""}>
+      ${t.text}
+      <button onclick='deleteTask(event)' class='delete-btn'>Delete</button>
+    `;
+    taskList.appendChild(li);
+  });
+  updateStatus();
+}
+
+function addTask() {
+  if (taskInput.value.trim() === "") return;
+  document.getElementById("empty-state").style.display = "none";
+  const li = document.createElement("li");
+  li.innerHTML = `
+    <input type='checkbox' class='task-checkbox' onchange='updateStatus()'>
+    ${taskInput.value}
+    <button onclick='deleteTask(event)' class='delete-btn'>Delete</button>
+  `;
+  taskList.appendChild(li);
+  taskInput.value = "";
+  updateStatus();
+  saveTasks();
+}
+
+function deleteTask(event) {
+  event.target.parentElement.remove();
+  updateStatus();
+  saveTasks();
+  if (taskList.querySelectorAll("li").length === 1) {
+    document.getElementById("empty-state").style.display = "block";
+  }
+}
+
+function updateStatus() {
+  const checkboxes = taskList.querySelectorAll("input[type='checkbox']");
+  const total = checkboxes.length;
+  let completed = 0;
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      completed++;
+      cb.parentElement.classList.add("completed");
+    } else {
+      cb.parentElement.classList.remove("completed");
+    }
+  });
+  taskStatus.innerText = `${completed} of ${total} completed`;
+  saveTasks();
+}
+
+taskInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") addTask();
+});
+
+window.onload = loadTasks;
+</script>
+
+</body>
+
+</html>
